@@ -1,0 +1,20 @@
+[flake8]
+# E203 - whitespace before ':', ignored due to imcompatibility with black.
+# See https://github.com/ambv/black/issues/315
+#
+# E266 - Too many leading '#' for block comment
+#
+# E402 - Module level import not at top of file
+# This needs to be looked into. Cleaning this up will need a lot of
+# refactoring to avoid circular imports
+#
+# E501 - Line too long
+# We use a line length of 120 when formatting with black. So this error
+# is ignored
+#
+# W503 - Line break occurred before a binary operator
+# Ignoring this as it is incomaitble with black's default formatting
+# behavior
+
+ignore = E203,E266,E402,E501,W503,F811
+per-file-ignores = qa-assurance-bdd/features/steps/__init__.py:F401

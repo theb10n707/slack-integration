@@ -1,0 +1,74 @@
+version: "3.0"
+services:
+
+  flaskapp:
+    container_name: "slack-integration-app"
+    restart: always
+    command: "gunicorn --bind ${FLASK_IP_ADDRESS}:${FLASK_PORT} 'app:create_app()'"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${FLASK_PORT}:${FLASK_PORT}"
+    depends_on:
+      - mongo
+      - redis
+
+  syslogapp:
+    container_name: "slack-integration-syslogapp"
+    restart: always
+    command: "flask start-syslog-server"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT}:${PORT}/udp"
+    depends_on:
+      - mongo
+      - redis
+
+  celeryworker:
+    container_name: "slack-integration-celeryapp"
+    restart: always
+    command: "flask start-celery-worker"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - mongo
+      - redis
+
+  redis:
+    container_name: "slack-integration-redis"
+    image: "redis"
+    restart: always
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    entrypoint: redis-server --appendonly yes
+
+  mongo:
+    image: mongo
+    container_name: "slack-integration-mongodb"
+    ports:
+      - "${MONGODB_PORT}:${MONGODB_PORT}"
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: '${DB_ROOT_USER}'
+      MONGO_INITDB_ROOT_PASSWORD: '${DB_ROOT_PW}'
+      MONGO_INITDB_DATABASE: '${DB_NAME}'
+      MONGO_INITDB_USERNAME: '${DB_USER}'
+      MONGO_INITDB_PASSWORD: '${DB_PASSWORD}'
+    volumes:
+      - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+
+  nginx:
+    container_name: "slack-integration-nginx"
+    image: nginx
+    restart: always
+    build:
+      context: .
+      dockerfile: Nginx_Dockerfile
+    ports:
+      - "${NGINX_PORT}:${NGINX_PORT}"
+    depends_on:
+      - flaskapp
